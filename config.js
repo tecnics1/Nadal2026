@@ -10,7 +10,7 @@ window.CONFIG = {
      Enganxa aquí l’adreça de la teva Firebase Realtime Database,
      per exemple: "https://el-teu-projecte-default-rtdb.europe-west1.firebasedatabase.app"
      Si ho deixes buit, cada mòbil té la seva classificació local. */
-  firebaseUrl: "",
+  firebaseUrl: "https://nadal2026-default-rtdb.europe-west1.firebasedatabase.app",
 
   /* PROVA 1 · Quiz. Quantes preguntes surten a cada partida (a l’atzar). */
   preguntesPerPartida: 8,
