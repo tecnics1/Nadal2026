@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cache de Nadal</title>
+<style>
+:root{--bg:#f3efe4;--ink:#1f2a1d;--pine:#1f5b3a;--moss:#3f7d4e;--red:#b3262e;--gold:#d99a1e;--card:#fffdf6;--line:#d8d0bb;--muted:#5f6a5a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1d14;--ink:#f1ecdc;--pine:#5fbf86;--moss:#3f8f5a;--red:#e0555d;--gold:#f2b84a;--card:#18291d;--line:#2d4434;--muted:#9fb3a3}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;min-height:100vh;display:flex;justify-content:center}
+main{width:100%;max-width:480px;padding:18px 16px 28px}
+h1{font-family:Georgia,"Times New Roman",serif;font-size:2.3rem;line-height:1.05;margin:6px 0 8px;color:var(--pine)}
+h2{font-family:Georgia,serif;font-size:1.45rem;margin:0 0 10px}
+p{line-height:1.5;margin:0 0 12px}
+.muted{color:var(--muted);font-size:.92rem}
+.card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}
+input{width:100%;font-size:1.15rem;padding:14px;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink);margin:6px 0 12px}
+button{font:inherit;font-weight:700;cursor:pointer;border:0;border-radius:14px;padding:15px 18px;background:var(--red);color:#fff;width:100%;font-size:1.05rem}
+button.alt{background:transparent;color:var(--pine);border:2px solid var(--pine);margin-top:10px}
+button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.hero{font-size:4rem;text-align:center;margin:10px 0 0}
+.bar{display:flex;justify-content:space-between;align-items:center;font-weight:700;margin-bottom:10px}
+.timer{height:10px;border-radius:6px;background:var(--line);overflow:hidden;margin-bottom:14px}
+.timer i{display:block;height:100%;width:100%;background:var(--gold)}
+.opt{background:var(--card);color:var(--ink);border:2px solid var(--line);text-align:left;margin:8px 0}
+.opt.ok{background:var(--moss);color:#fff;border-color:var(--moss)}
+.opt.ko{background:var(--red);color:#fff;border-color:var(--red)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.grid.g4{grid-template-columns:repeat(4,1fr);gap:8px}
+.cell{aspect-ratio:1;border-radius:16px;background:var(--card);border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:2.8rem;user-select:none;touch-action:manipulation;padding:0;color:var(--ink)}
+.g4 .cell{font-size:2.1rem}
+.cell.on{border-style:solid;border-color:var(--gold)}
+.cell.up{background:var(--moss);border:2px solid var(--moss)}
+.cell.done{opacity:.45}
+.rank{list-style:none;padding:0;margin:0}
+.rank li{display:flex;justify-content:space-between;padding:10px 4px;border-bottom:1px solid var(--line);font-size:1.05rem}
+.rank li.me{font-weight:700;color:var(--red)}
+.big{font-family:Georgia,serif;font-size:3.4rem;text-align:center;color:var(--red);margin:4px 0}
+.letters{font-family:Georgia,serif;font-size:2.2rem;letter-spacing:.18em;text-align:center;word-break:break-all;margin:10px 0;color:var(--pine)}
+.pop{animation:pop .3s}
+@keyframes pop{from{transform:scale(.7)}to{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.pop{animation:none}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script src="config.js"></script>
+<script>
+(function(){
+var C=window.CONFIG,app=document.getElementById('app');
+var K='cacheNadalRank',player='',S={q:0,t:0,m:0,a:0};
+document.title=C.titol;
+function load(){try{return JSON.parse(localStorage.getItem(K))||[]}catch(e){return []}}
+function save(r){try{localStorage.setItem(K,JSON.stringify(r))}catch(e){}}
+function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function show(h){app.innerHTML=h;window.scrollTo(0,0)}
+function norm(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f·.\s\-]/g,'').toUpperCase()}
+function total(){return S.q+S.t+S.m+S.a}
+function bar(l,n){return '<div class="bar"><span>'+l+'</span><span id="sc">⭐ '+n+'</span></div>'}
+function fb(){return (C.firebaseUrl||'').replace(/\/$/,'')}
+function getRank(cb){
+ if(fb()){fetch(fb()+'/ranking.json').then(function(r){return r.json()}).then(function(o){
+  var a=o?Object.keys(o).map(function(k){return o[k]}):[];a.sort(function(x,y){return y.s-x.s});cb(a,true)}).catch(function(){cb(load(),false)})}
+ else cb(load(),false)
+}
+function submit(e,cb){
+ var r=load();r.push(e);r.sort(function(a,b){return b.s-a.s});save(r);
+ if(fb()){fetch(fb()+'/ranking.json',{method:'POST',body:JSON.stringify(e)}).then(function(){cb()}).catch(function(){cb()})}else cb();
+}
+/* Timer helper: calls tick(msLeft) and onEnd() */
+function countdown(ms,tick,onEnd){var t0=Date.now(),iv=setInterval(function(){var l=Math.max(0,ms-(Date.now()-t0));tick(l);if(l<=0){clearInterval(iv);onEnd()}},60);return{stop:function(){clearInterval(iv)},left:function(){return Math.max(0,ms-(Date.now()-t0))}}}
+
+function home(){
+ show('<div class="hero">🎄📦</div><h1>'+esc(C.titol)+'</h1><p>'+esc(C.subtitol)+' Quiz, reflexos, memòria i paraules desordenades. Qui s’emportarà la glòria?</p>'+
+ '<div class="card"><label for="nm"><b>Com et dius?</b></label><input id="nm" maxlength="16" placeholder="El teu nom o nick" autocomplete="off"><button id="go">Comença el repte</button><button class="alt" id="rk">Veure la classificació</button></div>');
+ document.getElementById('go').onclick=function(){var v=document.getElementById('nm').value.trim();if(!v){document.getElementById('nm').focus();return}player=v;S={q:0,t:0,m:0,a:0};quiz()};
+ document.getElementById('rk').onclick=function(){ranking(null)};
+}
+
+/* PROVA 1 */
+function quiz(){
+ var qs=shuffle(C.preguntes).slice(0,C.preguntesPerPartida),i=0,lim=C.segonsPerPregunta*1000;
+ function next(){
+  if(i>=qs.length)return tapIntro();
+  var q=qs[i],opts=shuffle(q.o.map(function(t,k){return{t:t,c:k===q.c}}));
+  var h=bar('Prova 1 · '+(i+1)+'/'+qs.length,S.q)+'<div class="timer"><i id="tb"></i></div><h2>'+esc(q.p)+'</h2>';
+  opts.forEach(function(o,k){h+='<button class="opt" data-k="'+k+'">'+esc(o.t)+'</button>'});
+  show(h);
+  var tb=document.getElementById('tb'),done=false,cd=countdown(lim,function(l){tb.style.width=(l/lim*100)+'%'},function(){fin(-1)});
+  function fin(k){
+   if(done)return;done=true;var left=cd.left();cd.stop();
+   app.querySelectorAll('.opt').forEach(function(b,n){b.disabled=true;if(opts[n].c)b.classList.add('ok');else if(n===k)b.classList.add('ko')});
+   if(k>=0&&opts[k].c)S.q+=100+Math.round(50*left/lim);
+   setTimeout(function(){i++;next()},1100);
+  }
+  app.querySelectorAll('.opt').forEach(function(b){b.onclick=function(){fin(+b.dataset.k)}});
+ }
+ next();
+}
+
+/* PROVA 2 */
+function tapIntro(){
+ show('<div class="hero">📦</div><h2>Prova 2: Caça-caches</h2><div class="card"><p>Durant 25 segons apareixeran objectes. <b>Toca els caches 📦 (+10)</b> i els regals 🎁 (+25). <b>Evita el carbó 🪨 (−15)</b>!</p></div><p class="muted">Portes '+total()+' punts.</p><button id="st">Estic a punt!</button>');
+ document.getElementById('st').onclick=tapGame;
+}
+function tapGame(){
+ var h=bar('Prova 2',0).replace('</div>','<span id="tm">25s</span></div>')+'<div class="grid">';
+ for(var n=0;n<12;n++)h+='<div class="cell" data-n="'+n+'"></div>';
+ show(h+'</div>');
+ var cells=app.querySelectorAll('.cell'),sc=document.getElementById('sc'),tm=document.getElementById('tm'),t0=Date.now(),ended=false,tm_={};S.t=0;
+ function clr(c){c.textContent='';delete c.dataset.v;c.classList.remove('on')}
+ function spawn(){
+  if(ended)return;
+  var c=cells[Math.floor(Math.random()*12)];
+  if(!c.dataset.v){var r=Math.random(),v=r<.6?['📦',10]:r<.78?['🎁',25]:['🪨',-15];
+   c.textContent=v[0];c.dataset.v=v[1];c.classList.add('on');
+   tm_[c.dataset.n]=setTimeout(function(){clr(c)},Math.max(550,1000-(Date.now()-t0)/50));}
+  setTimeout(spawn,Math.max(280,620-(Date.now()-t0)/60));
+ }
+ cells.forEach(function(c){c.addEventListener('pointerdown',function(e){e.preventDefault();if(!c.dataset.v||ended)return;S.t=Math.max(0,S.t+(+c.dataset.v));sc.textContent='⭐ '+S.t;clearTimeout(tm_[c.dataset.n]);clr(c)})});
+ countdown(25000,function(l){tm.textContent=Math.ceil(l/1000)+'s'},function(){ended=true;setTimeout(memIntro,300)});
+ spawn();
+}
+
+/* PROVA 3 */
+function memIntro(){
+ show('<div class="hero">🧠</div><h2>Prova 3: Memòria</h2><div class="card"><p>Troba les <b>6 parelles</b> en 60 segons. Cada parella val 50 punts, i si les trobes totes guanyes 4 punts per cada segon que et sobri.</p></div><p class="muted">Portes '+total()+' punts.</p><button id="st">Som-hi!</button>');
+ document.getElementById('st').onclick=memory;
+}
+function memory(){
+ var em=C.memoria.slice(0,6),deck=shuffle(em.concat(em)),open=[],lock=false,found=0,moves=0,over=false;S.m=0;
+ var h=bar('Prova 3',0).replace('</div>','<span id="tm">60s</span></div>')+'<div class="timer"><i id="tb"></i></div><div class="grid g4">';
+ deck.forEach(function(e,i){h+='<button class="cell" data-i="'+i+'" aria-label="Carta">❔</button>'});
+ show(h+'</div><p class="muted" id="mv">Moviments: 0</p>');
+ var cs=app.querySelectorAll('.cell'),sc=document.getElementById('sc'),tb=document.getElementById('tb'),tm=document.getElementById('tm');
+ var cd=countdown(60000,function(l){tb.style.width=(l/600)+'%';tm.textContent=Math.ceil(l/1000)+'s'},function(){finish(0)});
+ function finish(bonus){if(over)return;over=true;cd.stop();S.m=found*50+bonus;sc.textContent='⭐ '+S.m;setTimeout(anaIntro,1200)}
+ cs.forEach(function(c){c.onclick=function(){
+  var i=+c.dataset.i;if(lock||over||open.indexOf(i)>-1||c.classList.contains('done'))return;
+  c.textContent=deck[i];c.classList.add('up');open.push(i);
+  if(open.length===2){moves++;document.getElementById('mv').textContent='Moviments: '+moves;var a=open[0],b=open[1];
+   if(deck[a]===deck[b]){[a,b].forEach(function(x){cs[x].classList.add('done')});found++;open=[];S.m=found*50;sc.textContent='⭐ '+S.m;if(found===6)finish(Math.ceil(cd.left()/1000)*4)}
+   else{lock=true;setTimeout(function(){[a,b].forEach(function(x){cs[x].textContent='❔';cs[x].classList.remove('up')});open=[];lock=false},700)}}
+ }});
+}
+
+/* PROVA 4 */
+function anaIntro(){
+ show('<div class="hero">🔤</div><h2>Prova 4: Paraules desordenades</h2><div class="card"><p>Les lletres estan barrejades. Escriu la paraula correcta amb l’ajuda de la pista. Cada encert val 100 punts, més bonus de velocitat.</p></div><p class="muted">Portes '+total()+' punts.</p><button id="st">Última prova!</button>');
+ document.getElementById('st').onclick=ana;
+}
+function ana(){
+ var ws=shuffle(C.paraules).slice(0,C.paraulesPerPartida),i=0,lim=C.segonsPerParaula*1000;S.a=0;
+ function nx(){
+  if(i>=ws.length)return finish();
+  var w=norm(ws[i][0]),sc=w,tries=0;
+  while(sc===w&&tries++<20&&w.length>1)sc=shuffle(w.split('')).join('');
+  show(bar('Prova 4 · '+(i+1)+'/'+ws.length,S.a)+'<div class="timer"><i id="tb"></i></div><div class="letters">'+esc(sc)+'</div><p class="muted" style="text-align:center">Pista: '+esc(ws[i][1])+'</p><input id="ans" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="La teva resposta"><button id="ok">Comprova</button><p id="msg" style="text-align:center;min-height:1.5em"></p>');
+  var inp=document.getElementById('ans'),msg=document.getElementById('msg'),tb=document.getElementById('tb'),done=false;
+  inp.focus();
+  var cd=countdown(lim,function(l){tb.style.width=(l/lim*100)+'%'},function(){if(done)return;done=true;msg.textContent='Era: '+ws[i][0];setTimeout(function(){i++;nx()},1500)});
+  function check(){
+   if(done)return;
+   if(norm(inp.value)===w){done=true;var l=cd.left();cd.stop();S.a+=100+Math.round(50*l/lim);msg.textContent='✅ Correcte!';setTimeout(function(){i++;nx()},800)}
+   else{msg.textContent='❌ Prova-ho de nou'}
+  }
+  document.getElementById('ok').onclick=check;
+  inp.onkeydown=function(e){if(e.key==='Enter')check()};
+ }
+ nx();
+}
+
+function title(s){return s>=1800?'🏆 Llegenda del geocaching':s>=1300?'🥇 Geocacher d’elit':s>=900?'🧭 Explorador del bosc':s>=500?'🎒 Novell amb il·lusió':'🌱 Muggle del Nadal'}
+
+function finish(){
+ var t=total(),e={n:player,s:t,d:Date.now()};
+ show('<div class="hero">🎅</div><p style="text-align:center">Guardant la teva puntuació…</p>');
+ submit(e,function(){getRank(function(r,live){
+  var pos=0;r.forEach(function(x,i){if(x.d===e.d)pos=i+1});if(!pos)pos=r.filter(function(x){return x.s>t}).length+1;
+  show('<div class="hero pop">🎅</div><h2 style="text-align:center">'+esc(player)+', has acabat!</h2><div class="big pop">'+t+'</div><p style="text-align:center"><b>'+title(t)+'</b></p>'+
+  '<div class="card"><p>Quiz: <b>'+S.q+'</b> · Reflexos: <b>'+S.t+'</b><br>Memòria: <b>'+S.m+'</b> · Paraules: <b>'+S.a+'</b></p><p>Ara vas en <b>'+pos+'a posició</b>'+(live?' de la classificació general.':'.')+'</p></div>'+
+  '<button id="rk">Veure la classificació</button><button class="alt" id="nx">Torna a començar</button>');
+  document.getElementById('rk').onclick=function(){ranking(e)};document.getElementById('nx').onclick=home;
+ })});
+}
+
+function ranking(me){
+ show('<h2>Classificació</h2><p class="muted">Carregant…</p>');
+ getRank(function(r,live){
+  var md=['🥇','🥈','🥉'],h='<h2>Classificació</h2><div class="card">';
+  if(!r.length)h+='<p class="muted">Encara no hi ha cap puntuació. Qui obre el foc?</p>';
+  else{h+='<ol class="rank">';r.slice(0,20).forEach(function(x,i){h+='<li class="'+(me&&x.d===me.d?'me':'')+'"><span>'+(md[i]||(i+1)+'.')+' '+esc(x.n)+'</span><span>'+x.s+'</span></li>'});h+='</ol>'}
+  h+='</div><p class="muted">'+(live?'Classificació en directe de tots els jugadors.':'Classificació d’aquest mòbil.')+'</p><button id="rf">Actualitza</button><button class="alt" id="bk">Torna</button>';
+  show(h);document.getElementById('rf').onclick=function(){ranking(me)};document.getElementById('bk').onclick=home;
+ });
+}
+home();
+})();
+</script>
+</body>
+</html>
