@@ -38,6 +38,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 .rank li.me{font-weight:700;color:var(--red)}
 .big{font-family:Georgia,serif;font-size:3.4rem;text-align:center;color:var(--red);margin:4px 0}
 .letters{font-family:Georgia,serif;font-size:2.2rem;letter-spacing:.18em;text-align:center;word-break:break-all;margin:10px 0;color:var(--pine)}
+.pz{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}.pc{aspect-ratio:1;padding:0;border-radius:6px;border:2px solid transparent;background-size:300% 300%;background-color:var(--line)}.pc.sel{border-color:var(--gold);outline:3px solid var(--gold);outline-offset:-3px;transform:scale(.95)}.pv{width:84px;height:84px;flex:none;border-radius:8px;background-size:cover;border:2px solid var(--line)}
 .pop{animation:pop .3s}
 @keyframes pop{from{transform:scale(.7)}to{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.pop{animation:none}}
@@ -49,7 +50,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 <script>
 (function(){
 var C=window.CONFIG,app=document.getElementById('app');
-var K='cacheNadalRank',player='',S={q:0,t:0,m:0,a:0};
+var K='cacheNadalRank',player='',S={q:0,t:0,m:0,a:0,p:0};
 document.title=C.titol;
 function load(){try{return JSON.parse(localStorage.getItem(K))||[]}catch(e){return []}}
 function save(r){try{localStorage.setItem(K,JSON.stringify(r))}catch(e){}}
@@ -57,7 +58,7 @@ function esc(s){var d=document.createElement('div');d.textContent=s;return d.inn
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
 function show(h){app.innerHTML=h;window.scrollTo(0,0)}
 function norm(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f·.\s\-]/g,'').toUpperCase()}
-function total(){return S.q+S.t+S.m+S.a}
+function total(){return S.q+S.t+S.m+S.a+S.p}
 function bar(l,n){return '<div class="bar"><span>'+l+'</span><span id="sc">⭐ '+n+'</span></div>'}
 function fb(){return (C.firebaseUrl||'').replace(/\/$/,'')}
 function getRank(cb){
@@ -73,9 +74,9 @@ function submit(e,cb){
 function countdown(ms,tick,onEnd){var t0=Date.now(),iv=setInterval(function(){var l=Math.max(0,ms-(Date.now()-t0));tick(l);if(l<=0){clearInterval(iv);onEnd()}},60);return{stop:function(){clearInterval(iv)},left:function(){return Math.max(0,ms-(Date.now()-t0))}}}
 
 function home(){
- show('<div class="hero">🎄📦</div><h1>'+esc(C.titol)+'</h1><p>'+esc(C.subtitol)+' Quiz, reflexos, memòria i paraules desordenades. Qui s’emportarà la glòria?</p>'+
+ show('<div class="hero">🎄📦</div><h1>'+esc(C.titol)+'</h1><p>'+esc(C.subtitol)+' Quiz, reflexos, memòria, paraules desordenades i un puzzle final. Qui s’emportarà la glòria?</p>'+
  '<div class="card"><label for="nm"><b>Com et dius?</b></label><input id="nm" maxlength="16" placeholder="El teu nom o nick" autocomplete="off"><button id="go">Comença el repte</button><button class="alt" id="rk">Veure la classificació</button></div>');
- document.getElementById('go').onclick=function(){var v=document.getElementById('nm').value.trim();if(!v){document.getElementById('nm').focus();return}player=v;S={q:0,t:0,m:0,a:0};quiz()};
+ document.getElementById('go').onclick=function(){var v=document.getElementById('nm').value.trim();if(!v){document.getElementById('nm').focus();return}player=v;S={q:0,t:0,m:0,a:0,p:0};quiz()};
  document.getElementById('rk').onclick=function(){ranking(null)};
 }
 
@@ -148,13 +149,13 @@ function memory(){
 
 /* PROVA 4 */
 function anaIntro(){
- show('<div class="hero">🔤</div><h2>Prova 4: Paraules desordenades</h2><div class="card"><p>Les lletres estan barrejades. Escriu la paraula correcta amb l’ajuda de la pista. Cada encert val 100 punts, més bonus de velocitat.</p></div><p class="muted">Portes '+total()+' punts.</p><button id="st">Última prova!</button>');
+ show('<div class="hero">🔤</div><h2>Prova 4: Paraules desordenades</h2><div class="card"><p>Les lletres estan barrejades. Escriu la paraula correcta amb l’ajuda de la pista. Cada encert val 100 punts, més bonus de velocitat.</p></div><p class="muted">Portes '+total()+' punts.</p><button id="st">Som-hi!</button>');
  document.getElementById('st').onclick=ana;
 }
 function ana(){
  var ws=shuffle(C.paraules).slice(0,C.paraulesPerPartida),i=0,lim=C.segonsPerParaula*1000;S.a=0;
  function nx(){
-  if(i>=ws.length)return finish();
+  if(i>=ws.length)return puzIntro();
   var w=norm(ws[i][0]),sc=w,tries=0;
   while(sc===w&&tries++<20&&w.length>1)sc=shuffle(w.split('')).join('');
   show(bar('Prova 4 · '+(i+1)+'/'+ws.length,S.a)+'<div class="timer"><i id="tb"></i></div><div class="letters">'+esc(sc)+'</div><p class="muted" style="text-align:center">Pista: '+esc(ws[i][1])+'</p><input id="ans" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="La teva resposta"><button id="ok">Comprova</button><p id="msg" style="text-align:center;min-height:1.5em"></p>');
@@ -172,7 +173,33 @@ function ana(){
  nx();
 }
 
-function title(s){return s>=1800?'🏆 Llegenda del geocaching':s>=1300?'🥇 Geocacher d’elit':s>=900?'🧭 Explorador del bosc':s>=500?'🎒 Novell amb il·lusió':'🌱 Muggle del Nadal'}
+/* PROVA 5 */
+var SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#13294b"/><circle cx="244" cy="52" r="26" fill="#f6efc8"/><g fill="#fff"><circle cx="40" cy="40" r="2"/><circle cx="90" cy="25" r="2"/><circle cx="60" cy="95" r="2"/><circle cx="20" cy="140" r="2"/><circle cx="270" cy="130" r="2"/><circle cx="200" cy="20" r="2"/></g><rect y="230" width="300" height="70" fill="#f4f7fb"/><polygon points="150,60 105,130 195,130" fill="#1f7a46"/><polygon points="150,100 90,185 210,185" fill="#2a8f55"/><polygon points="150,140 75,235 225,235" fill="#35a363"/><rect x="138" y="235" width="24" height="25" fill="#7a4a21"/><polygon points="150,30 156,48 175,48 160,59 166,77 150,66 134,77 140,59 125,48 144,48" fill="#f2b84a"/><circle cx="130" cy="120" r="6" fill="#e0555d"/><circle cx="172" cy="165" r="6" fill="#e0555d"/><circle cx="118" cy="205" r="6" fill="#f2b84a"/><circle cx="185" cy="215" r="6" fill="#f2b84a"/><rect x="30" y="240" width="45" height="38" fill="#b3262e"/><rect x="48" y="240" width="9" height="38" fill="#f2b84a"/><rect x="225" y="248" width="50" height="32" fill="#c9923b"/><rect x="225" y="248" width="50" height="9" fill="#a8742a"/><text x="250" y="271" font-size="16" text-anchor="middle" fill="#fff" font-family="Arial">GC</text></svg>';
+function puzIntro(){
+ show('<div class="hero">🧩</div><h2>Prova 5: El puzzle</h2><div class="card"><p>Toca una peça i després una altra per <b>intercanviar-les</b>. Reconstrueix la imatge en '+C.segonsPuzzle+' segons. Si l’acabes, guanyes 250 punts més bonus de velocitat. Si no, 15 punts per cada peça ben col·locada.</p></div><p class="muted">Portes '+total()+' punts.</p><button id="st">Última prova!</button>');
+ document.getElementById('st').onclick=puzzle;
+}
+function puzzle(){
+ var order,lim=C.segonsPuzzle*1000,sel=-1,over=false,img='url("'+(C.puzzleImatge||('data:image/svg+xml,'+encodeURIComponent(SVG)))+'")';
+ do{order=shuffle([0,1,2,3,4,5,6,7,8])}while(order.every(function(v,i){return v===i}));
+ S.p=0;
+ var h=bar('Prova 5',0)+'<div class="timer"><i id="tb"></i></div><div style="display:flex;gap:12px;align-items:center;margin-bottom:10px"><div class="pv" style="background-image:'+img+'"></div><span class="muted">Aquest és el model. Toca dues peces per canviar-les de lloc.</span></div><div class="pz">';
+ for(var p=0;p<9;p++)h+='<button class="pc" data-p="'+p+'" aria-label="Peça"></button>';
+ show(h+'</div>');
+ var bs=app.querySelectorAll('.pc'),sc=document.getElementById('sc'),tb=document.getElementById('tb');
+ function ok(){return order.filter(function(v,i){return v===i}).length}
+ function draw(){bs.forEach(function(b,p){var v=order[p];b.style.backgroundImage=img;b.style.backgroundPosition=(v%3)*50+'% '+Math.floor(v/3)*50+'%';b.className='pc'+(p===sel?' sel':'')});sc.textContent='🧩 '+ok()+'/9'}
+ var cd=countdown(lim,function(l){tb.style.width=(l/lim*100)+'%'},function(){end(false)});
+ function end(win){if(over)return;over=true;var l=cd.left();cd.stop();S.p=win?250+Math.round(150*l/lim):ok()*15;sc.textContent=win?'🎉 Puzzle fet!':'⏰ Temps!';setTimeout(finish,1400)}
+ bs.forEach(function(b,p){b.onclick=function(){
+  if(over)return;
+  if(sel<0){sel=p}else if(sel===p){sel=-1}else{var t=order[sel];order[sel]=order[p];order[p]=t;sel=-1;draw();if(ok()===9)return end(true)}
+  draw();
+ }});
+ draw();
+}
+
+function title(s){return s>=2300?'🏆 Llegenda del geocaching':s>=1700?'🥇 Geocacher d’elit':s>=1200?'🧭 Explorador del bosc':s>=700?'🎒 Novell amb il·lusió':'🌱 Muggle del Nadal'}
 
 function finish(){
  var t=total(),e={n:player,s:t,d:Date.now()};
@@ -180,7 +207,7 @@ function finish(){
  submit(e,function(){getRank(function(r,live){
   var pos=0;r.forEach(function(x,i){if(x.d===e.d)pos=i+1});if(!pos)pos=r.filter(function(x){return x.s>t}).length+1;
   show('<div class="hero pop">🎅</div><h2 style="text-align:center">'+esc(player)+', has acabat!</h2><div class="big pop">'+t+'</div><p style="text-align:center"><b>'+title(t)+'</b></p>'+
-  '<div class="card"><p>Quiz: <b>'+S.q+'</b> · Reflexos: <b>'+S.t+'</b><br>Memòria: <b>'+S.m+'</b> · Paraules: <b>'+S.a+'</b></p><p>Ara vas en <b>'+pos+'a posició</b>'+(live?' de la classificació general.':'.')+'</p></div>'+
+  '<div class="card"><p>Quiz: <b>'+S.q+'</b> · Reflexos: <b>'+S.t+'</b><br>Memòria: <b>'+S.m+'</b> · Paraules: <b>'+S.a+'</b><br>Puzzle: <b>'+S.p+'</b></p><p>Ara vas en <b>'+pos+'a posició</b>'+(live?' de la classificació general.':'.')+'</p></div>'+
   '<button id="rk">Veure la classificació</button><button class="alt" id="nx">Torna a començar</button>');
   document.getElementById('rk').onclick=function(){ranking(e)};document.getElementById('nx').onclick=home;
  })});

@@ -17,3 +17,6 @@ Edita només `config.js` (hi ha instruccions i exemples). Després de desar el c
 4. Copia l’adreça de la base de dades (acaba en `firebasedatabase.app`) i enganxa-la a `firebaseUrl` de `config.js`.
 
 Per esborrar la classificació, elimina el node `ranking` des de la consola de Firebase.
+
+## Puzzle de la prova 5
+Per defecte surt un dibuix nadalenc. Per posar-hi una foto vostra, puja-la al repositori (millor quadrada, p. ex. `puzzle.jpg`) i escriu `puzzleImatge: "puzzle.jpg"` a `config.js`.
