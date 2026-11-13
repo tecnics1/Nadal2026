@@ -3,13 +3,13 @@
    ============================================================ */
 window.CONFIG = {
 
-  titol: "Geosopar de Nadal BCN 2026",
+  titol: "Cache de Nadal",
   subtitol: "Cinc proves, un sol campió.",
 
   /* PROVA 5 · Puzzle de 9 peces (3x3).
      Per defecte surt un dibuix nadalenc. Si vols posar-hi una foto vostra,
      puja-la a GitHub (millor quadrada, p. ex. puzzle.jpg) i escriu-ne el nom aquí: "puzzle.jpg" */
-  puzzleImatge: "puzzle.png",
+  puzzleImatge: "",
   segonsPuzzle: 120,
 
   /* Classificació compartida entre tots els mòbils (opcional).

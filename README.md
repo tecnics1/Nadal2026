@@ -20,3 +20,6 @@ Per esborrar la classificació, elimina el node `ranking` des de la consola de F
 
 ## Puzzle de la prova 5
 Per defecte surt un dibuix nadalenc. Per posar-hi una foto vostra, puja-la al repositori (millor quadrada, p. ex. `puzzle.jpg`) i escriu `puzzleImatge: "puzzle.jpg"` a `config.js`.
+
+## Abans del sopar
+Quan hagis fet proves, esborra el node `ranking` a la consola de Firebase (icona de la creu al costat de `ranking`) perquè la classificació comenci buida. Cada mòbil guarda que ja ha jugat; per tornar a provar-ho al teu, obre l’enllaç en una pestanya privada.

@@ -39,6 +39,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 .big{font-family:Georgia,serif;font-size:3.4rem;text-align:center;color:var(--red);margin:4px 0}
 .letters{font-family:Georgia,serif;font-size:2.2rem;letter-spacing:.18em;text-align:center;word-break:break-all;margin:10px 0;color:var(--pine)}
 .pz{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}.pc{aspect-ratio:1;padding:0;border-radius:6px;border:2px solid transparent;background-size:300% 300%;background-color:var(--line)}.pc.sel{border-color:var(--gold);outline:3px solid var(--gold);outline-offset:-3px;transform:scale(.95)}.pv{width:84px;height:84px;flex:none;border-radius:8px;background-size:cover;border:2px solid var(--line)}
+.cf{position:fixed;top:-2rem;font-size:1.6rem;pointer-events:none;z-index:9;animation:fall linear forwards}@keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
 .pop{animation:pop .3s}
 @keyframes pop{from{transform:scale(.7)}to{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.pop{animation:none}}
@@ -50,50 +51,84 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--gold);outline-o
 <script>
 (function(){
 var C=window.CONFIG,app=document.getElementById('app');
-var K='cacheNadalRank',player='',S={q:0,t:0,m:0,a:0,p:0};
+var K='cacheNadalRank',KS='cacheNadalState',player='',key='',startD=0,rt=0,abandoned=false,S={q:0,t:0,m:0,a:0,p:0};
 document.title=C.titol;
 function load(){try{return JSON.parse(localStorage.getItem(K))||[]}catch(e){return []}}
 function save(r){try{localStorage.setItem(K,JSON.stringify(r))}catch(e){}}
 function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML}
 function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
-function show(h){app.innerHTML=h;window.scrollTo(0,0)}
+function show(h){clearInterval(rt);app.innerHTML=h;window.scrollTo(0,0);if(document.getElementById('pos'))standing()}
 function norm(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f·.\s\-]/g,'').toUpperCase()}
 function total(){return S.q+S.t+S.m+S.a+S.p}
 function bar(l,n){return '<div class="bar"><span>'+l+'</span><span id="sc">⭐ '+n+'</span></div>'}
 function fb(){return (C.firebaseUrl||'').replace(/\/$/,'')}
+function keyOf(n){return norm(n).toLowerCase().replace(/[^a-z0-9]/g,'')}
+function stGet(){try{return JSON.parse(localStorage.getItem(KS))}catch(e){return null}}
+function stSet(o){try{localStorage.setItem(KS,JSON.stringify(o))}catch(e){}}
+function vib(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
 function getRank(cb){
- if(fb()){fetch(fb()+'/ranking.json').then(function(r){return r.json()}).then(function(o){
-  var a=o?Object.keys(o).map(function(k){return o[k]}):[];a.sort(function(x,y){return y.s-x.s});cb(a,true)}).catch(function(){cb(load(),false)})}
- else cb(load(),false)
+ function ord(a){a=a.filter(function(x){return x&&x.k});a.sort(function(x,y){return y.s-x.s});return a}
+ if(fb()){fetch(fb()+'/ranking.json').then(function(r){return r.json()}).then(function(o){cb(ord(o?Object.keys(o).map(function(k){return o[k]}):[]),true)}).catch(function(){cb(ord(load()),false)})}
+ else cb(ord(load()),false)
 }
-function submit(e,cb){
- var r=load();r.push(e);r.sort(function(a,b){return b.s-a.s});save(r);
- if(fb()){fetch(fb()+'/ranking.json',{method:'POST',body:JSON.stringify(e)}).then(function(){cb()}).catch(function(){cb()})}else cb();
+function taken(k,cb){
+ if(fb()){fetch(fb()+'/ranking/'+k+'.json').then(function(r){return r.json()}).then(function(o){cb(!!o)}).catch(function(){cb('err')})}
+ else cb(load().some(function(x){return x.k===k}))
+}
+function push(f,cb){
+ var e={k:key,n:player,s:total(),f:!!f,d:startD};
+ stSet({n:player,k:key,S:S,d:startD,done:!!f});
+ var r=load().filter(function(x){return x.k!==key});r.push(e);save(r);
+ if(fb()){fetch(fb()+'/ranking/'+key+'.json',{method:'PUT',body:JSON.stringify(e)}).then(function(){cb&&cb()}).catch(function(){cb&&cb()})}else cb&&cb();
+}
+function standing(){
+ push(false,function(){getRank(function(r){
+  var el=document.getElementById('pos');if(!el)return;
+  var i=r.findIndex(function(x){return x.k===key});if(i<0)return;
+  var t=total(),txt='📊 Ara vas en '+(i+1)+'a posició de '+r.length+'. ';
+  txt+=i>0?'Et passa '+r[i-1].n+' per '+(r[i-1].s-t)+' punts.':'Ets el líder! 👑';
+  el.textContent=txt;
+ })});
+}
+function confetti(){
+ if(window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+ var em=['🎉','🎄','⭐','🎁','📦'];
+ for(var i=0;i<30;i++){var s=document.createElement('span');s.className='cf';s.textContent=em[i%5];s.style.left=Math.random()*95+'vw';s.style.animationDuration=(2.5+Math.random()*2.5)+'s';s.style.animationDelay=(Math.random()*1.2)+'s';document.body.appendChild(s);setTimeout(function(x){return function(){x.remove()}}(s),7000)}
 }
 /* Timer helper: calls tick(msLeft) and onEnd() */
 function countdown(ms,tick,onEnd){var t0=Date.now(),iv=setInterval(function(){var l=Math.max(0,ms-(Date.now()-t0));tick(l);if(l<=0){clearInterval(iv);onEnd()}},60);return{stop:function(){clearInterval(iv)},left:function(){return Math.max(0,ms-(Date.now()-t0))}}}
 
 function home(){
- show('<div class="hero">🎄📦</div><h1>'+esc(C.titol)+'</h1><p>'+esc(C.subtitol)+' Quiz, reflexos, memòria, paraules desordenades i un puzzle final. Qui s’emportarà la glòria?</p>'+
- '<div class="card"><label for="nm"><b>Com et dius?</b></label><input id="nm" maxlength="16" placeholder="El teu nom o nick" autocomplete="off"><button id="go">Comença el repte</button><button class="alt" id="rk">Veure la classificació</button></div>');
- document.getElementById('go').onclick=function(){var v=document.getElementById('nm').value.trim();if(!v){document.getElementById('nm').focus();return}player=v;S={q:0,t:0,m:0,a:0,p:0};quiz()};
- document.getElementById('rk').onclick=function(){ranking(null)};
+ show('<div class="hero">🎄📦</div><h1>'+esc(C.titol)+'</h1><p>'+esc(C.subtitol)+' Quiz, reflexos, memòria, paraules desordenades i un puzzle final. Hi ha classificació en directe!</p>'+
+ '<div class="card"><label for="nm"><b>Com et dius?</b></label><input id="nm" maxlength="16" placeholder="El teu nom o nick" autocomplete="off"><p class="muted">⚠️ El nom és únic i només es pot jugar <b>una vegada</b>. No recarreguis la pàgina durant la partida!</p><button id="go">Comença el repte</button><p id="msg" style="color:var(--red);font-weight:700;min-height:1.4em;margin:10px 0 0"></p><button class="alt" id="rk">Veure la classificació</button></div>');
+ var go=document.getElementById('go'),msg=document.getElementById('msg');
+ go.onclick=function(){
+  var v=document.getElementById('nm').value.trim(),k=keyOf(v);
+  if(!k){msg.textContent='Posa’t un nom amb lletres o números.';return}
+  go.disabled=true;msg.textContent='Comprovant el nom…';
+  taken(k,function(t){
+   if(t==='err'){msg.textContent='No hi ha connexió amb el servidor. Torna-ho a provar.';go.disabled=false;return}
+   if(t){msg.textContent='Aquest nom ja està agafat. Tria’n un altre!';go.disabled=false;return}
+   player=v;key=k;startD=Date.now();S={q:0,t:0,m:0,a:0,p:0};push(false,quiz);
+  });
+ };
+ document.getElementById('rk').onclick=ranking;
 }
 
 /* PROVA 1 */
 function quiz(){
- var qs=shuffle(C.preguntes).slice(0,C.preguntesPerPartida),i=0,lim=C.segonsPerPregunta*1000;
+ var qs=shuffle(C.preguntes).slice(0,C.preguntesPerPartida),i=0,streak=0,lim=C.segonsPerPregunta*1000;
  function next(){
   if(i>=qs.length)return tapIntro();
   var q=qs[i],opts=shuffle(q.o.map(function(t,k){return{t:t,c:k===q.c}}));
-  var h=bar('Prova 1 · '+(i+1)+'/'+qs.length,S.q)+'<div class="timer"><i id="tb"></i></div><h2>'+esc(q.p)+'</h2>';
+  var h=bar('Prova 1 · '+(i+1)+'/'+qs.length+(streak>1?' · 🔥 ratxa x'+streak:''),S.q)+'<div class="timer"><i id="tb"></i></div><h2>'+esc(q.p)+'</h2>';
   opts.forEach(function(o,k){h+='<button class="opt" data-k="'+k+'">'+esc(o.t)+'</button>'});
   show(h);
   var tb=document.getElementById('tb'),done=false,cd=countdown(lim,function(l){tb.style.width=(l/lim*100)+'%'},function(){fin(-1)});
   function fin(k){
    if(done)return;done=true;var left=cd.left();cd.stop();
    app.querySelectorAll('.opt').forEach(function(b,n){b.disabled=true;if(opts[n].c)b.classList.add('ok');else if(n===k)b.classList.add('ko')});
-   if(k>=0&&opts[k].c)S.q+=100+Math.round(50*left/lim);
+   if(k>=0&&opts[k].c){streak++;S.q+=100+Math.round(50*left/lim)+Math.min(100,(streak-1)*25);vib(30)}else{streak=0;vib([60,40,60])}
    setTimeout(function(){i++;next()},1100);
   }
   app.querySelectorAll('.opt').forEach(function(b){b.onclick=function(){fin(+b.dataset.k)}});
@@ -103,7 +138,7 @@ function quiz(){
 
 /* PROVA 2 */
 function tapIntro(){
- show('<div class="hero">📦</div><h2>Prova 2: Caça-caches</h2><div class="card"><p>Durant 25 segons apareixeran objectes. <b>Toca els caches 📦 (+10)</b> i els regals 🎁 (+25). <b>Evita el carbó 🪨 (−15)</b>!</p></div><p class="muted">Portes '+total()+' punts.</p><button id="st">Estic a punt!</button>');
+ show('<div class="hero">📦</div><h2>Prova 2: Caça-caches</h2><div class="card"><p>Durant 25 segons apareixeran objectes. <b>Toca els caches 📦 (+10)</b> i els regals 🎁 (+25). <b>Evita el carbó 🪨 (−15)</b>!</p></div><p class="muted">Portes '+total()+' punts.</p><p id="pos" class="card" style="font-weight:700">📊 Calculant la teva posició…</p><button id="st">Estic a punt!</button>');
  document.getElementById('st').onclick=tapGame;
 }
 function tapGame(){
@@ -127,7 +162,7 @@ function tapGame(){
 
 /* PROVA 3 */
 function memIntro(){
- show('<div class="hero">🧠</div><h2>Prova 3: Memòria</h2><div class="card"><p>Troba les <b>6 parelles</b> en 60 segons. Cada parella val 50 punts, i si les trobes totes guanyes 4 punts per cada segon que et sobri.</p></div><p class="muted">Portes '+total()+' punts.</p><button id="st">Som-hi!</button>');
+ show('<div class="hero">🧠</div><h2>Prova 3: Memòria</h2><div class="card"><p>Troba les <b>6 parelles</b> en 60 segons. Cada parella val 50 punts, i si les trobes totes guanyes 4 punts per cada segon que et sobri.</p></div><p class="muted">Portes '+total()+' punts.</p><p id="pos" class="card" style="font-weight:700">📊 Calculant la teva posició…</p><button id="st">Som-hi!</button>');
  document.getElementById('st').onclick=memory;
 }
 function memory(){
@@ -149,7 +184,7 @@ function memory(){
 
 /* PROVA 4 */
 function anaIntro(){
- show('<div class="hero">🔤</div><h2>Prova 4: Paraules desordenades</h2><div class="card"><p>Les lletres estan barrejades. Escriu la paraula correcta amb l’ajuda de la pista. Cada encert val 100 punts, més bonus de velocitat.</p></div><p class="muted">Portes '+total()+' punts.</p><button id="st">Som-hi!</button>');
+ show('<div class="hero">🔤</div><h2>Prova 4: Paraules desordenades</h2><div class="card"><p>Les lletres estan barrejades. Escriu la paraula correcta amb l’ajuda de la pista. Cada encert val 100 punts, més bonus de velocitat.</p></div><p class="muted">Portes '+total()+' punts.</p><p id="pos" class="card" style="font-weight:700">📊 Calculant la teva posició…</p><button id="st">Som-hi!</button>');
  document.getElementById('st').onclick=ana;
 }
 function ana(){
@@ -176,7 +211,7 @@ function ana(){
 /* PROVA 5 */
 var SVG='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#13294b"/><circle cx="244" cy="52" r="26" fill="#f6efc8"/><g fill="#fff"><circle cx="40" cy="40" r="2"/><circle cx="90" cy="25" r="2"/><circle cx="60" cy="95" r="2"/><circle cx="20" cy="140" r="2"/><circle cx="270" cy="130" r="2"/><circle cx="200" cy="20" r="2"/></g><rect y="230" width="300" height="70" fill="#f4f7fb"/><polygon points="150,60 105,130 195,130" fill="#1f7a46"/><polygon points="150,100 90,185 210,185" fill="#2a8f55"/><polygon points="150,140 75,235 225,235" fill="#35a363"/><rect x="138" y="235" width="24" height="25" fill="#7a4a21"/><polygon points="150,30 156,48 175,48 160,59 166,77 150,66 134,77 140,59 125,48 144,48" fill="#f2b84a"/><circle cx="130" cy="120" r="6" fill="#e0555d"/><circle cx="172" cy="165" r="6" fill="#e0555d"/><circle cx="118" cy="205" r="6" fill="#f2b84a"/><circle cx="185" cy="215" r="6" fill="#f2b84a"/><rect x="30" y="240" width="45" height="38" fill="#b3262e"/><rect x="48" y="240" width="9" height="38" fill="#f2b84a"/><rect x="225" y="248" width="50" height="32" fill="#c9923b"/><rect x="225" y="248" width="50" height="9" fill="#a8742a"/><text x="250" y="271" font-size="16" text-anchor="middle" fill="#fff" font-family="Arial">GC</text></svg>';
 function puzIntro(){
- show('<div class="hero">🧩</div><h2>Prova 5: El puzzle</h2><div class="card"><p>Toca una peça i després una altra per <b>intercanviar-les</b>. Reconstrueix la imatge en '+C.segonsPuzzle+' segons. Si l’acabes, guanyes 250 punts més bonus de velocitat. Si no, 15 punts per cada peça ben col·locada.</p></div><p class="muted">Portes '+total()+' punts.</p><button id="st">Última prova!</button>');
+ show('<div class="hero">🧩</div><h2>Prova 5: El puzzle</h2><div class="card"><p>Toca una peça i després una altra per <b>intercanviar-les</b>. Reconstrueix la imatge en '+C.segonsPuzzle+' segons. Si l’acabes, guanyes 250 punts més bonus de velocitat. Si no, 15 punts per cada peça ben col·locada.</p></div><p class="muted">Portes '+total()+' punts.</p><p id="pos" class="card" style="font-weight:700">📊 Calculant la teva posició…</p><button id="st">Última prova!</button>');
  document.getElementById('st').onclick=puzzle;
 }
 function puzzle(){
@@ -201,29 +236,37 @@ function puzzle(){
 
 function title(s){return s>=2300?'🏆 Llegenda del geocaching':s>=1700?'🥇 Geocacher d’elit':s>=1200?'🧭 Explorador del bosc':s>=700?'🎒 Novell amb il·lusió':'🌱 Muggle del Nadal'}
 
-function finish(){
- var t=total(),e={n:player,s:t,d:Date.now()};
- show('<div class="hero">🎅</div><p style="text-align:center">Guardant la teva puntuació…</p>');
- submit(e,function(){getRank(function(r,live){
-  var pos=0;r.forEach(function(x,i){if(x.d===e.d)pos=i+1});if(!pos)pos=r.filter(function(x){return x.s>t}).length+1;
-  show('<div class="hero pop">🎅</div><h2 style="text-align:center">'+esc(player)+', has acabat!</h2><div class="big pop">'+t+'</div><p style="text-align:center"><b>'+title(t)+'</b></p>'+
-  '<div class="card"><p>Quiz: <b>'+S.q+'</b> · Reflexos: <b>'+S.t+'</b><br>Memòria: <b>'+S.m+'</b> · Paraules: <b>'+S.a+'</b><br>Puzzle: <b>'+S.p+'</b></p><p>Ara vas en <b>'+pos+'a posició</b>'+(live?' de la classificació general.':'.')+'</p></div>'+
-  '<button id="rk">Veure la classificació</button><button class="alt" id="nx">Torna a començar</button>');
-  document.getElementById('rk').onclick=function(){ranking(e)};document.getElementById('nx').onclick=home;
- })});
-}
+function finish(){push(true,function(){result(true)})}
 
-function ranking(me){
- show('<h2>Classificació</h2><p class="muted">Carregant…</p>');
+function result(fresh){
+ show('<div class="hero">🎅</div><p style="text-align:center">Carregant resultat…</p>');
  getRank(function(r,live){
-  var md=['🥇','🥈','🥉'],h='<h2>Classificació</h2><div class="card">';
-  if(!r.length)h+='<p class="muted">Encara no hi ha cap puntuació. Qui obre el foc?</p>';
-  else{h+='<ol class="rank">';r.slice(0,20).forEach(function(x,i){h+='<li class="'+(me&&x.d===me.d?'me':'')+'"><span>'+(md[i]||(i+1)+'.')+' '+esc(x.n)+'</span><span>'+x.s+'</span></li>'});h+='</ol>'}
-  h+='</div><p class="muted">'+(live?'Classificació en directe de tots els jugadors.':'Classificació d’aquest mòbil.')+'</p><button id="rf">Actualitza</button><button class="alt" id="bk">Torna</button>';
-  show(h);document.getElementById('rf').onclick=function(){ranking(me)};document.getElementById('bk').onclick=home;
+  var t=total(),pos=0;r.forEach(function(x,i){if(x.k===key)pos=i+1});if(!pos)pos=r.filter(function(x){return x.s>t}).length+1;
+  show('<div class="hero pop">🎅</div><h2 style="text-align:center">'+esc(player)+', has acabat!</h2><div class="big pop">'+t+'</div><p style="text-align:center"><b>'+title(t)+'</b></p>'+
+  '<div class="card"><p>Quiz: <b>'+S.q+'</b> · Reflexos: <b>'+S.t+'</b><br>Memòria: <b>'+S.m+'</b> · Paraules: <b>'+S.a+'</b><br>Puzzle: <b>'+S.p+'</b></p><p>Ara vas en <b>'+pos+'a posició</b>'+(live?' de la classificació general.':'.')+'</p>'+(abandoned?'<p class="muted">La partida es va tancar abans d’acabar, així que compten els punts aconseguits.</p>':'')+'</div>'+
+  '<p class="muted" style="text-align:center">Ja has jugat! Segueix la classificació en directe per veure si t’adelanten 👀</p><button id="rk">Veure la classificació en directe</button>');
+  document.getElementById('rk').onclick=ranking;
+  if(fresh)confetti();
  });
 }
-home();
+
+function ranking(){
+ show('<h2>Classificació</h2><div class="card" id="rkw"><p class="muted">Carregant…</p></div><p class="muted" id="rkn"></p><button class="alt" id="bk">Torna</button>');
+ function upd(){getRank(function(r,live){
+  var w=document.getElementById('rkw');if(!w)return;
+  var md=['🥇','🥈','🥉'],h='';
+  if(!r.length)h='<p class="muted">Encara no hi ha cap puntuació. Qui obre el foc?</p>';
+  else{h='<ol class="rank">';r.slice(0,25).forEach(function(x,i){h+='<li class="'+(x.k===key?'me':'')+'"><span>'+(md[i]||(i+1)+'.')+' '+esc(x.n)+(x.f?'':' ⏳')+'</span><span>'+x.s+'</span></li>'});h+='</ol>'}
+  w.innerHTML=h;
+  document.getElementById('rkn').textContent=(live?'🔴 En directe, s’actualitza sola. ':'Classificació d’aquest mòbil. ')+(r.some(function(x){return !x.f})?'⏳ = encara està jugant.':'');
+ })}
+ upd();rt=setInterval(upd,5000);
+ document.getElementById('bk').onclick=function(){stGet()?result(false):home()};
+}
+
+var st=stGet();
+if(st&&st.k){player=st.n;key=st.k;S=st.S;startD=st.d;if(st.done)result(false);else{abandoned=true;finish()}}
+else home();
 })();
 </script>
 </body>
