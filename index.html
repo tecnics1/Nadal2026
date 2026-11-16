@@ -138,7 +138,7 @@ function quiz(){
 
 /* PROVA 2 */
 function tapIntro(){
- show('<div class="hero">📦</div><h2>Prova 2: Caça-caches</h2><div class="card"><p>Durant 25 segons apareixeran objectes. <b>Toca els caches 📦 (+10)</b> i els regals 🎁 (+25). <b>Evita el carbó 🪨 (−15)</b>!</p></div><p class="muted">Portes '+total()+' punts.</p><p id="pos" class="card" style="font-weight:700">📊 Calculant la teva posició…</p><button id="st">Estic a punt!</button>');
+ show('<div class="hero">😃</div><h2>Prova 2: Caça-caches</h2><div class="card"><p>Durant 25 segons apareixeran objectes. <b>Toca els caches 😃 (+10)</b> i els regals 🎁 (+25). <b>Evita el carbó 😢 (−15)</b>!</p></div><p class="muted">Portes '+total()+' punts.</p><p id="pos" class="card" style="font-weight:700">📊 Calculant la teva posició…</p><button id="st">Estic a punt!</button>');
  document.getElementById('st').onclick=tapGame;
 }
 function tapGame(){
@@ -150,7 +150,7 @@ function tapGame(){
  function spawn(){
   if(ended)return;
   var c=cells[Math.floor(Math.random()*12)];
-  if(!c.dataset.v){var r=Math.random(),v=r<.6?['📦',10]:r<.78?['🎁',25]:['🪨',-15];
+  if(!c.dataset.v){var r=Math.random(),v=r<.6?['😃',10]:r<.78?['🎁',25]:['😢',-15];
    c.textContent=v[0];c.dataset.v=v[1];c.classList.add('on');
    tm_[c.dataset.n]=setTimeout(function(){clr(c)},Math.max(550,1000-(Date.now()-t0)/50));}
   setTimeout(spawn,Math.max(280,620-(Date.now()-t0)/60));
