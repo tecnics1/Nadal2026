@@ -215,12 +215,20 @@ function puzIntro(){
  document.getElementById('st').onclick=puzzle;
 }
 function puzzle(){
- var order,lim=C.segonsPuzzle*1000,sel=-1,over=false,img='url("'+(C.puzzleImatge||('data:image/svg+xml,'+encodeURIComponent(SVG)))+'")';
+ var u=C.puzzleImatge;if(!u)return puzRun('');
+ var t=new Image();
+ t.onload=function(){try{var w=t.naturalWidth,h=t.naturalHeight,z=Math.min(w,h),c=document.createElement('canvas');c.width=c.height=600;c.getContext('2d').drawImage(t,(w-z)/2,(h-z)/2,z,z,0,0,600,600);puzRun(c.toDataURL('image/jpeg',.88))}catch(e){puzRun(u)}};
+ t.onerror=function(){puzRun('')};
+ t.src=u;
+}
+function puzRun(src){
+ var order,lim=C.segonsPuzzle*1000,sel=-1,over=false,img="url('"+(src||('data:image/svg+xml,'+encodeURIComponent(SVG)))+"')";
  do{order=shuffle([0,1,2,3,4,5,6,7,8])}while(order.every(function(v,i){return v===i}));
  S.p=0;
- var h=bar('Prova 5',0)+'<div class="timer"><i id="tb"></i></div><div style="display:flex;gap:12px;align-items:center;margin-bottom:10px"><div class="pv" style="background-image:'+img+'"></div><span class="muted">Aquest és el model. Toca dues peces per canviar-les de lloc.</span></div><div class="pz">';
+ var h=bar('Prova 5',0)+'<div class="timer"><i id="tb"></i></div><div style="display:flex;gap:12px;align-items:center;margin-bottom:10px"><div class="pv"></div><span class="muted">Aquest és el model. Toca dues peces per canviar-les de lloc.</span></div><div class="pz">';
  for(var p=0;p<9;p++)h+='<button class="pc" data-p="'+p+'" aria-label="Peça"></button>';
  show(h+'</div>');
+ document.querySelector('.pv').style.backgroundImage=img;
  var bs=app.querySelectorAll('.pc'),sc=document.getElementById('sc'),tb=document.getElementById('tb');
  function ok(){return order.filter(function(v,i){return v===i}).length}
  function draw(){bs.forEach(function(b,p){var v=order[p];b.style.backgroundImage=img;b.style.backgroundPosition=(v%3)*50+'% '+Math.floor(v/3)*50+'%';b.className='pc'+(p===sel?' sel':'')});sc.textContent='🧩 '+ok()+'/9'}

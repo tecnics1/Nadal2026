@@ -46,16 +46,12 @@ window.CONFIG = {
   paraulesPerPartida: 6,
   segonsPerParaula: 25,
   paraules: [
-    ["GPS","Sistema de posicionament per satèl·lit"],
-    ["GCHQ","Codi GC - Geocaching Headquarters"],
-    ["NANO","Contenidor extremadament petit"],
-    ["GC30","Codi GC - Catxé actiu més antic del món - Mingo"],
-    ["MULTI","Catxé amb diverses etapes"],
-    ["GC43","Codi GC - Europe’s First"],
-    ["SPOILER","Informació que revela la ubicació"],
-    ["DNF","Registre d'un catxé no trobat"],
-    ["GEOART","Dibuix format per diversos catxés al mapa"],
-    ["MUGGLE","Persona que no practica geocaching"]
+    ["GCHQ","Geocaching Headquarters"],
+    ["GC2D4","El catxé més antic de Catalunya - Montserrat"],
+    ["GC30","El catxé actiu més antic del món - Mingo"],
+    ["GCGV0P","Original Stash Tribute Plaque"],
+    ["GC43","Europe’s First"],
+    ["GC1BE91","International Space Station"]
   ],
 
   /* PROVA 5 · Puzzle de 9 peces (3x3).
