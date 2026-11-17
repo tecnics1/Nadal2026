@@ -43,15 +43,16 @@ window.CONFIG = {
   memoria: ["😢","📦","😃","🧭","🔍","🔦"],
 
   /* PROVA 4 · Paraules desordenades. Format: ["PARAULA", "pista"]. */
-  paraulesPerPartida: 6,
+  paraulesPerPartida: 7,
   segonsPerParaula: 25,
   paraules: [
-    ["GCHQ","Geocaching Headquarters"],
-    ["GC2D4","El catxé més antic de Catalunya - Montserrat"],
-    ["GC30","El catxé actiu més antic del món - Mingo"],
-    ["GCGV0P","Original Stash Tribute Plaque"],
-    ["GC43","Europe’s First"],
-    ["GC1BE91","International Space Station"]
+    ["GPS","Sistema de satèl·lits que ens guia fins a l’amagatall"],
+    ["GC30","Codi GC del catxé actiu més antic del món - Mingo"],
+    ["FTF","Primer en trobar el catxé"],
+    ["GC43","Codi GC Europe’s First"],
+    ["NANO","El contenidor més petit que existeix"],
+    ["MUGGLE","Persona que no juga a geocaching"],
+    ["LOG","Registre que fem a l’aplicació o al paperet del catxé"]
   ],
 
   /* PROVA 5 · Puzzle de 9 peces (3x3).
